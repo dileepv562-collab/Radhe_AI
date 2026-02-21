@@ -4,18 +4,17 @@ from gtts import gTTS
 import os
 import base64
 
-# API Key Setup
+# 1. Secrets se API Key uthana (Code me dikhegi nahi)
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+    genai.configure(api_key=GOOGLE_API_KEY)
 except:
-    GOOGLE_API_KEY = "AIzaSyBpXf5sfUvA0xsKmYA2eajvw-8spYN7tm0"
+    st.error("Kripya Streamlit Settings me API Key dalein.")
 
-genai.configure(api_key=GOOGLE_API_KEY)
-
-# Aapka pasandida model: Gemini 3 Flash (Technically 2.0 Flash in API)
+# 2. Model Selection
 model = genai.GenerativeModel('gemini-3-flash-preview')
 
-# Audio function
+# Audio Function (Bolne wala)
 def speak_text(text):
     try:
         tts = gTTS(text=text, lang='hi')
@@ -46,17 +45,19 @@ if prompt := st.chat_input("Radhe AI se baat karein..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # Personal Context for Dilip ji
         context = (
             "Aap Radhe AI hain. User Dilip ji hain. "
-            "Wo subah 4:00 AM sadhna karte hain aur 'Om Yogmaya Mahalakshmi Narayani Namostute' ka jaap karte hain. "
-            "Unka parivar: Punam (patni) aur Aniket (beta). "
-            "Unke sawal ka jawab prem se dein."
+            "Wo subah 4:00 AM sadhna karte hain. "
+            "Unka parivar: Punam aur Aniket. "
+            "Humesha prem se jawab dein."
         )
         
-        response = model.generate_content(f"{context}\n\nUser: {prompt}")
-        st.markdown(response.text)
-        st.session_state.messages.append({"role": "assistant", "content": response.text})
-        
-        # Bolne wala feature
-        speak_text(response.text)
+        try:
+            response = model.generate_content(f"{context}\n\nUser: {prompt}")
+            answer = response.text
+            st.markdown(answer)
+            st.session_state.messages.append({"role": "assistant", "content": answer})
+            speak_text(answer)
+        except Exception as e:
+            st.error("Setting me jaakar API Key check karein.")
+            
