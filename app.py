@@ -29,7 +29,7 @@ except:
     genai.configure(api_key="AIzaSyBpXf5sfUvA0xsKmYA2eajvw-8spYN7tm0")
 
 # Sabse naya Gemini 3 Flash model
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-3-flash-preview')
 
 # 3. Super-Fast Audio Function
 def speak_now(text, speed):
