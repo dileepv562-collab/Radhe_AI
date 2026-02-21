@@ -61,7 +61,7 @@ st.title("🙏 Radhe AI: High-Speed Mode")
 
 # Voice Speed Control in Sidebar
 st.sidebar.header("वॉइस सेटिंग्स")
-v_speed = st.sidebar.slider("बोलने की रफ़्तार", 1.0, 2.0, 1.5, step=0.1)
+v_speed = st.sidebar.slider("बोलने की रफ़्तार", 2.0, 3.0, 2.0, step=0.2)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
