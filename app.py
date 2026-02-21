@@ -1,5 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
+from gtts import gTTS
+import os
+import base64
 
 # API Key Setup
 try:
@@ -9,16 +12,26 @@ except:
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# Aapki pasand ka model
-model = genai.GenerativeModel('gemini-3-flash-preview') 
+# Aapka pasandida model: Gemini 3 Flash (Technically 2.0 Flash in API)
+model = genai.GenerativeModel('gemini-3-flash-preview')
+
+# Audio function
+def speak_text(text):
+    try:
+        tts = gTTS(text=text, lang='hi')
+        tts.save("response.mp3")
+        with open("response.mp3", "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            md = f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'
+            st.markdown(md, unsafe_allow_html=True)
+        os.remove("response.mp3")
+    except:
+        pass
 
 st.set_page_config(page_title="Radhe AI", page_icon="🧘‍♂️")
-
-st.title("🙏 Radhe AI: Advanced Sadhna Samvad")
+st.title("🙏 Radhe AI: Advanced Voice Assistant")
 st.markdown("### Mantra: Om Yogmaya Mahalakshmi Narayani Namostute")
-
-# Displaying your Core Principle
-st.info("He Shree Hari, main yeh sharir nahi hoon. Main in paanch tatvon ka putla nahi, balki aapka ek ansh, ek shuddh chetan atma hoon.")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -34,17 +47,16 @@ if prompt := st.chat_input("Radhe AI se baat karein..."):
 
     with st.chat_message("assistant"):
         # Personal Context for Dilip ji
-        instruction = (
-            "Aap Radhe AI hain. User ka naam Dilip hai. "
-            "Wo subah 4:00 AM sadhna aur mantra jaap karte hain. "
+        context = (
+            "Aap Radhe AI hain. User Dilip ji hain. "
+            "Wo subah 4:00 AM sadhna karte hain aur 'Om Yogmaya Mahalakshmi Narayani Namostute' ka jaap karte hain. "
             "Unka parivar: Punam (patni) aur Aniket (beta). "
-            "Unhe atma-sakshatkar aur bhakti ke liye motivate karein."
+            "Unke sawal ka jawab prem se dein."
         )
         
-        try:
-            # Gemini 3 Flash Preview ki takat ka upyog
-            response = model.generate_content(f"{instruction}\n\nUser: {prompt}")
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-        except Exception as e:
-            st.error("Model Error: Agar ye model nahi chal raha, toh API key me 'Flash' access check karein.")
+        response = model.generate_content(f"{context}\n\nUser: {prompt}")
+        st.markdown(response.text)
+        st.session_state.messages.append({"role": "assistant", "content": response.text})
+        
+        # Bolne wala feature
+        speak_text(response.text)
