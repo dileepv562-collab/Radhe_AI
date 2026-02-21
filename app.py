@@ -5,7 +5,7 @@ import google.generativeai as genai
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 except:
-    GOOGLE_API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
+    GOOGLE_API_KEY = "AIzaSyBpXf5sfUvA0xsKmYA2eajvw-8spYN7tm0"
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
