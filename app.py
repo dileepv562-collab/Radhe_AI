@@ -13,7 +13,7 @@ except:
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Aapka pasandida model: Gemini 3 Flash (Technically 2.0 Flash in API)
-model = genai.GenerativeModel('gemini-3-flash-preview')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Audio function
 def speak_text(text):
