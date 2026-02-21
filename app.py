@@ -43,7 +43,7 @@ except:
     # Backup Key
     genai.configure(api_key="AIzaSyBpXf5sfUvA0xsKmYA2eajvw-8spYN7tm0")
 
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-3-flash-preview')
 
 # 3. Audio Function with Speed Parameter
 def speak_now(text, speed):
