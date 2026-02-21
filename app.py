@@ -1,54 +1,54 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. API Key Setup (Secrets se ya Direct)
+# 1. API Key Setup
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 except:
-    # Agar secrets set nahi hai toh ye key use hogi
     GOOGLE_API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# 2. Model Setup (Naya aur Tez Model)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# 2. Advanced Model Selection (Gemini 2.0/3.0 Preview)
+# Note: Currently 'gemini-2.0-flash' is the stable fast preview
+model = genai.GenerativeModel('gemini-2.0-flash')
 
-# 3. Page Configuration
+# 3. App UI & Personalization
 st.set_page_config(page_title="Radhe AI", page_icon="🧘‍♂️")
 
-st.title("🙏 Radhe AI: Sadhna Samvad")
+st.title("🙏 Radhe AI: Advanced Sadhna Samvad")
 st.markdown("### Mantra: Om Yogmaya Mahalakshmi Narayani Namostute")
 
-# Chat history initialization
+# Displaying your Spiritual Principle
+st.info("He Shree Hari, main yeh sharir nahi hoon. Main in paanch tatvon ka putla nahi, balki aapka ek ansh, ek shuddh chetan atma hoon.")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat history
+# Show conversation
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 4. User Input and AI Response
+# 4. Chat Input & Response
 if prompt := st.chat_input("Radhe AI se baat karein..."):
-    # User ka message save karein
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # AI ko aapka context dena (Dilip ji ki jankari)
+        # Providing Context about Dilip ji
         instruction = (
-            "Aap Radhe AI hain, Dilip ji ke sahayak. "
-            "Dilip ji subah 4:00 AM sadhna karte hain. "
-            "Unka mantra 'Om Yogmaya Mahalakshmi Narayani Namostute' hai. "
-            "Unki patni ka naam Punam hai aur bete ka naam Aniket hai. "
-            "Humesha prem se aur adhyatmik dhang se jawab dein."
+            "Aap Radhe AI hain. User Dilip ji hain. "
+            "Wo subah 4:00 AM sadhna karte hain aur mantra jaap karte hain. "
+            "Unki wife Punam aur beta Aniket hain. "
+            "Unhe hamesha unki spiritual journey (atma-sakshatkar) ke liye motivate karein."
         )
         
-        # Response generate karna
         try:
             response = model.generate_content(f"{instruction}\n\nUser: {prompt}")
             st.markdown(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
         except Exception as e:
-            st.error(f"Error: API Key check karein ya thoda intezar karein. {e}")
+            st.error("Model Error: Model version ka update check karein ya API Key dekhein.")
+            
