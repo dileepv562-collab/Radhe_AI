@@ -1,80 +1,60 @@
 import streamlit as st
 import google.generativeai as genai
+from googlesearch import search
 from gtts import gTTS
 import os
 import base64
 
-# 1. Page Config & CSS (Centered Circle Layout)
-st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
+# 1. Setup & Model
+try:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+except:
+    genai.configure(api_key="AIzaSyBpXf5sfUvA0xsKmYA2eajvw-8spYN7tm0")
 
+model = genai.GenerativeModel('gemini-3-flash-preview')
+
+# LIVE SEARCH FUNCTION
+def get_live_data(query):
+    search_results = ""
+    try:
+        for j in search(query, tld="co.in", num=3, stop=3, pause=2):
+            search_results += f"\nSource: {j}"
+        return search_results
+    except:
+        return ""
+
+# Audio Function
+def speak_now(text, speed):
+    try:
+        tts = gTTS(text=text, lang='hi', slow=False)
+        tts.save("res.mp3")
+        with open("res.mp3", "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            audio_html = f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio><script>document.querySelector("audio").playbackRate = {speed};</script>'
+            st.markdown(audio_html, unsafe_allow_html=True)
+        os.remove("res.mp3")
+    except: pass
+
+# 2. UI Layers (Centered Circle)
 st.markdown("""
     <style>
-    /* मंत्र चक्र को सेंटर में करने के लिए डिज़ाइन */
-    .circle-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-    }
+    .circle-container { display: flex; justify-content: center; padding: 20px; }
     .mantra-circle {
-        width: 160px; height: 160px; 
-        border: 4px dashed #ff9933;
-        border-radius: 50%; 
-        display: flex;
-        align-items: center; 
-        justify-content: center;
-        animation: rotate 12s linear infinite; 
-        color: #cc5500; 
-        font-weight: bold;
-        background: white;
-        box-shadow: 0px 0px 15px rgba(255, 153, 51, 0.4);
-        text-align: center;
-        font-size: 18px;
-        line-height: 1.2;
+        width: 150px; height: 150px; border: 4px dashed #ff9933;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        animation: rotate 12s linear infinite; color: #cc5500; font-weight: bold;
+        background: white; text-align: center;
     }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Gemini 3 Flash Model Setup (Mera Model)
-try:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-except:
-    # Backup Key
-    genai.configure(api_key="AIzaSyBpXf5sfUvA0xsKmYA2eajvw-8spYN7tm0")
-
-model = genai.GenerativeModel('gemini-3-flash-preview')
-
-# 3. Audio Function with Speed Parameter
-def speak_now(text, speed):
-    try:
-        tts = gTTS(text=text, lang='hi', slow=False)
-        tts.save("fast_res.mp3")
-        with open("fast_res.mp3", "rb") as f:
-            data = f.read()
-            b64 = base64.b64encode(data).decode()
-            audio_html = f"""
-                <audio autoplay="true">
-                    <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
-                </audio>
-                <script>
-                    var audio = document.querySelector('audio');
-                    audio.playbackRate = {speed};
-                </script>
-            """
-            st.markdown(audio_html, unsafe_allow_html=True)
-        os.remove("fast_res.mp3")
-    except: pass
-
-# 4. Visual Layers (Mantra in Center)
 st.markdown('<div class="circle-container"><div class="mantra-circle">ओम नमो<br>भगवते<br>वासुदेवाय</div></div>', unsafe_allow_html=True)
-st.title("🙏 Radhe AI")
-st.markdown("<p style='text-align: center;'>'मैं एक शुद्ध चेतन आत्मा हूँ'</p>", unsafe_allow_html=True)
 
-# Voice Speed Selector in Sidebar
-v_speed = st.sidebar.slider("बोलने की रफ़्तार (Voice Speed)", 1.0, 2.0, 1.5, step=0.1)
+# 3. Chat Logic
+v_speed = st.sidebar.slider("वॉइस स्पीड", 1.0, 2.0, 1.5)
 
-# Chat History logic
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -82,23 +62,21 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 5. Fast Interaction with Dilip Ji's Context
-if prompt := st.chat_input("Radhe AI से बात करें..."):
+if prompt := st.chat_input("Radhe AI से ताज़ा जानकारी पूछें..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        context = (
-            "Aap Radhe AI hain. User Dilip hain jo subah 4 AM sadhna karte hain. "
-            "Unka mantra 'Om Yogmaya Mahalakshmi Narayani Namostute' hai. "
-            "Unki patni Punam ji aur beta Aniket hain. Prem se jawab dein."
-        )
+        # Live Search Trigger
+        live_info = ""
+        if any(word in prompt.lower() for word in ["price", "price", "news", "today", "current", "stock", "share"]):
+            with st.spinner('इंटरनेट पर ताज़ा जानकारी ढूँढ रहा हूँ...'):
+                live_info = get_live_data(prompt)
+        
+        context = f"Aap Radhe AI hain. Dilip ji ke liye ye live search data mila hai: {live_info}. Iska upyog karke sahi jawab dein."
         
         response = model.generate_content(f"{context}\n\nUser: {prompt}")
         st.markdown(response.text)
         st.session_state.messages.append({"role": "assistant", "content": response.text})
-        
-        # Immediate Voice Output
         speak_now(response.text, v_speed)
-        
