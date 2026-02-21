@@ -1,73 +1,50 @@
-import requests
-import json
-import os
-import time
+import streamlit as st
+import google.generativeai as genai
 
-# --- Setup ---
-API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
-MODEL = "gemini-3-flash-preview" 
-URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
+# API Key Setup
+try:
+    GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+except:
+    GOOGLE_API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
 
-def show_divine_circle():
-    """Divine Circle: Om Namo Bhagavate Vasudevaya"""
-    # Gold color code: \033[1;33m
-    circle = """
-    \033[1;33m
-               .---.
-            .'       '.
-           /   OM NAMO  \\
-          |  BHAGAVATE   |
-           \ VASUDEVAYA /
-            '.       .'
-               '---'
-    \033[0m"""
-    print(circle)
-    print("\033[1;36mॐ नमो भगवते वासुदेवाय\033[0m\n")
+genai.configure(api_key=GOOGLE_API_KEY)
 
-def speak_lyra(text):
-    """Voice fix for Failed transaction error"""
-    try:
-        os.system(f'am start -a android.intent.action.TTS_SERVICE -e text "{text}" > /dev/null 2>&1 &')
-    except:
-        pass
+# Aapki pasand ka model
+model = genai.GenerativeModel('gemini-3-flash-preview') 
 
-def radhe_ai_final_v4():
-    os.system('clear')
-    show_divine_circle()
-    print("-" * 40)
-    print("   RADHE AI: GEMINI 3 + LYRA (STABLE)   ")
-    print("-" * 40)
-    print("Radhe-Radhe Dilip Ji!]\n")
-    
-    while True:
+st.set_page_config(page_title="Radhe AI", page_icon="🧘‍♂️")
+
+st.title("🙏 Radhe AI: Advanced Sadhna Samvad")
+st.markdown("### Mantra: Om Yogmaya Mahalakshmi Narayani Namostute")
+
+# Displaying your Core Principle
+st.info("He Shree Hari, main yeh sharir nahi hoon. Main in paanch tatvon ka putla nahi, balki aapka ek ansh, ek shuddh chetan atma hoon.")
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.chat_input("Radhe AI se baat karein..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        # Personal Context for Dilip ji
+        instruction = (
+            "Aap Radhe AI hain. User ka naam Dilip hai. "
+            "Wo subah 4:00 AM sadhna aur mantra jaap karte hain. "
+            "Unka parivar: Punam (patni) aur Aniket (beta). "
+            "Unhe atma-sakshatkar aur bhakti ke liye motivate karein."
+        )
+        
         try:
-            user_input = input("\033[1;32mDilip Ji:\033[0m ")
-            if user_input.lower() in ['exit', 'stop', 'band']: break
-
-            payload = {
-                "contents": [{"parts": [{"text": f"Your name is Radhe AI. Use Lyra voice style. Talking to Dilip. Start with Radhe Radhe. Hindi: {user_input}"}]}]
-            }
-            
-            headers = {'Content-Type': 'application/json'}
-            
-            # Read timeout fix: 10 se badha kar 30 kiya
-            response = requests.post(URL, headers=headers, json=payload, timeout=30)
-            result = response.json()
-            
-            if 'candidates' in result:
-                ai_text = result['candidates'][0]['content']['parts'][0]['text']
-                print(f"\n\033[1;36mRadhe AI (Lyra):\033[0m {ai_text}\n")
-                speak_lyra(ai_text)
-            elif 'error' in result:
-                print(f"\n[AI Error]: {result['error']['message']}")
-                
-        except requests.exceptions.ReadTimeout:
-            # Time out error handling
-            print("\n\033[1;31m[Wait]: Internet thoda slow hai, main dhyan laga raha hoon...\033[0m")
-            time.sleep(1)
+            # Gemini 3 Flash Preview ki takat ka upyog
+            response = model.generate_content(f"{instruction}\n\nUser: {prompt}")
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
         except Exception as e:
-            print(f"\n[System Error]: {e}")
-
-if __name__ == "__main__":
-    radhe_ai_final_v4()
-    
+            st.error("Model Error: Agar ye model nahi chal raha, toh API key me 'Flash' access check karein.")
