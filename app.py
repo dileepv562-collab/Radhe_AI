@@ -2,35 +2,36 @@ import streamlit as st
 import requests
 import json
 
-# --- SETUP ---
+# --- CONFIG ---
+# Streamlit mein !pip install nahi likhte, requirements.txt ka use karein
 API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
 MODEL = "gemini-3-flash-preview"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
-# Streamlit Page Design
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
 
-# Divine Circle
-st.markdown("<h1 style='text-align: center; color: gold;'>🕉️ OM NAMO BHAGAVATE VASUDEVAYA 🕉️</h1>", unsafe_content_html=True)
-st.subheader("Radhe-Radhe Dilip Ji!]")
+# Divine Circle Fix
+# dhayan dein: 'unsafe_allow_html' hona chahiye, 'unsafe_content_html' nahi
+st.markdown("<h1 style='text-align: center; color: gold;'>🕉️ OM NAMO BHAGAVATE VASUDEVAYA 🕉️</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Radhe-Radhe Dilip Ji!]</p>", unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display Chat
+# Chat History dikhane ke liye
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # User Input
-if prompt := st.chat_input("Radhe AI se taaza jankari poochein..."):
+if prompt := st.chat_input("2026 ka live market data poochein..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2026 Live Data Search
+    # 2024 ki jagah 2026 ka data fetch karne ke liye
     payload = {
-        "contents": [{"parts": [{"text": f"Current date: Feb 2026. Use Google Search for Dilip: {prompt}"}]}],
+        "contents": [{"parts": [{"text": f"Today is Feb 2026. Use Google Search for Dilip: {prompt}"}]}],
         "tools": [{"google_search_retrieval": {}}]
     }
 
@@ -39,9 +40,9 @@ if prompt := st.chat_input("Radhe AI se taaza jankari poochein..."):
         result = response.json()
         
         if 'candidates' in result:
-            full_response = result['candidates'][0]['content']['parts'][0]['text']
+            answer = result['candidates'][0]['content']['parts'][0]['text']
             with st.chat_message("assistant"):
-                st.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
+                st.markdown(answer)
+            st.session_state.messages.append({"role": "assistant", "content": answer})
     except Exception as e:
-        st.error(f"System Error: {e}")
+        st.error(f"Error: {e}")
