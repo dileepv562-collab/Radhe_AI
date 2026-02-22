@@ -3,3 +3,4 @@ google-generativeai
 gTTS
 streamlit-mic-recorder
 googlesearch-python
+requests
