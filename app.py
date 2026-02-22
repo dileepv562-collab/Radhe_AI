@@ -1,6 +1,3 @@
-# Step 1: Run this once in Colab
-!pip install -q requests
-
 import requests
 import json
 from google.colab import output
