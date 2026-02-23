@@ -3,21 +3,16 @@ import requests
 import time
 
 # --- SECURE SETUP ---
-# Secrets se API Key lena (Security ke liye)
-try:
-    API_KEY = st.secrets["GEMINI_API_KEY"]
-except:
-    st.error("Kripya Streamlit Secrets mein 'GEMINI_API_KEY' set karein.")
-    st.stop()
-
+# Secrets se API Key lena zaruri hai
+API_KEY = st.secrets["GEMINI_API_KEY"]
 MODEL = "gemini-3-flash-preview"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
 
-# --- DIVINE CIRCLE DESIGN ---
+# --- CLASSIC DIVINE CIRCLE ---
 circle_html = """
-<div style="text-align: center; color: gold; font-family: monospace; white-space: pre; line-height: 1.2;">
+<div style="text-align: center; color: #FFD700; font-family: 'Courier New', monospace; white-space: pre; font-weight: bold;">
        .---.
     .'       '.
    /   OM NAMO  \\
@@ -25,7 +20,7 @@ circle_html = """
    \\ VASUDEVAYA /
     '.       .'
        '---'
-<h2 style="color: cyan;">ॐ नमो भगवते वासुदेवाय</h2>
+<h2 style="color: #00FFFF; text-shadow: 2px 2px #000;">ॐ नमो भगवते वासुदेवाय</h2>
 </div>
 """
 st.markdown(circle_html, unsafe_allow_html=True)
@@ -34,44 +29,47 @@ st.write(f"Radhe-Radhe Dilip Ji!] System Ready hai.")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Chat History
+# Chat display logic
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
-        st.write(m["content"])
+        st.markdown(m["content"])
 
-# User Input
+# Smart Input with No-Error Logic
 if prompt := st.chat_input("Puchiye, Dilip ji..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.write(prompt)
-    
-    # Payload with 2026 Live Context
+        st.markdown(prompt)
+
+    # 2026 ka live context aur Google Search
     payload = {
         "contents": [{"parts": [{"text": f"Today is Feb 2026. Give a short Hindi reply for Dilip: {prompt}"}]}]
     }
     
-    # Market keywords for Live Search
-    if any(word in prompt.lower() for word in ['stoc', 'market', 'nifty', 'aaj', 'price']):
+    # Live stock market check
+    if any(word in prompt.lower() for word in ['stoc', 'market', 'nifty', 'aaj', 'rate']):
         payload["tools"] = [{"google_search_retrieval": {}}]
-    
-    # Retry Logic for weak network
-    success = False
-    with st.spinner("Radhe AI dhoodh raha hai..."):
-        for i in range(2): 
-            try:
-                # 90s timeout
-                response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=90)
-                ans = response.json()['candidates'][0]['content']['parts'][0]['text']
-                
-                with st.chat_message("assistant"):
-                    st.write(ans)
-                st.session_state.messages.append({"role": "assistant", "content": ans})
-                success = True
-                break
-            except:
-                time.sleep(1)
-                continue
-    
-    if not success:
-        st.warning("Network weak hai. Ek baar refresh karke dobara try karein.")
+
+    with st.chat_message("assistant"):
+        response_placeholder = st.empty() # Khali jagah jahan ek-ek shabd dikhega
+        full_response = ""
         
+        try:
+            # 150 seconds ka maximum wait
+            response = requests.post(URL, json=payload, timeout=150)
+            result = response.json()
+            
+            if 'candidates' in result:
+                ans_text = result['candidates'][0]['content']['parts'][0]['text']
+                
+                # Streaming effect: Ek-ek shabd karke dikhayega
+                for word in ans_text.split():
+                    full_response += word + " "
+                    time.sleep(0.05)
+                    response_placeholder.markdown(full_response + "▌")
+                response_placeholder.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            else:
+                st.error("AI thoda vyast hai, 1 minute rukk kar koshish karein.")
+        except:
+            st.warning("Internet bohot zyada slow hai. Kripya page refresh karke ek chota message (jaise 'Hi') bhejein.")
+            
