@@ -3,7 +3,7 @@ import requests
 
 # --- CONFIG ---
 API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
-MODEL = ('gemini-3-flash-preview')
+MODEL = "gemini-3-flash-preview"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
