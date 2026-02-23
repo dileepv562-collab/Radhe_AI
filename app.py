@@ -15,26 +15,26 @@ st.markdown("<p style='text-align: center;'>Radhe-Radhe Dilip Ji!]</p>", unsafe_
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Faster Logic: Search sirf zarurat par chalega
-if prompt := st.chat_input("Puchiye, Dilip ji..."):
+# Sabse Tez Logic: No Search unless strictly requested
+if prompt := st.chat_input("Hii likhkar check karein..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
+    # Base Instruction: Isse AI fast reply dega
     payload = {
-        "contents": [{"parts": [{"text": f"Today is Feb 2026. Talk to Dilip. Hindi: {prompt}"}]}]
+        "contents": [{"parts": [{"text": f"Aap Radhe AI hain. Dilip ji se baat kar rahe hain. Hindi mein short reply dein: {prompt}"}]}]
     }
     
-    # Agar live data chahiye, tabhi search tool on karein
-    live_keywords = ['live', 'today', 'price', 'rate', 'nifty', 'suzlon', 'aaj']
-    if any(word in prompt.lower() for word in live_keywords):
+    # Google Search tabhi chalega jab aap 'live' ya 'stock' likhenge
+    if any(word in prompt.lower() for word in ['live', 'stock', 'rate', 'aaj', 'price']):
         payload["tools"] = [{"google_search_retrieval": {}}]
     
     try:
-        # 60 second ka max wait
-        response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=60)
+        # Request with 90s timeout for very slow networks
+        response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=90)
         ans = response.json()['candidates'][0]['content']['parts'][0]['text']
         st.session_state.messages.append({"role": "assistant", "content": ans})
     except:
-        st.warning("Network weak hai, lekin main koshish kar raha hoon. Ek baar refresh karein.")
+        st.error("Network bohot weak hai. Ek baar Airplane mode on-off karke try karein.")
 
 # Messages display
 for m in st.session_state.messages:
