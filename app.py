@@ -1,8 +1,15 @@
 import streamlit as st
 import requests
+import time
 
-# --- CONFIG ---
-API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
+# --- SECURE SETUP ---
+# Ab hum API KEY ko yahan nahi likhenge, balki Streamlit Secrets se lenge
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+except:
+    st.error("Kripya Streamlit Secrets mein 'GEMINI_API_KEY' set karein.")
+    st.stop()
+
 MODEL = "gemini-3-flash-preview"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
@@ -15,35 +22,33 @@ st.markdown("<p style='text-align: center;'>Radhe-Radhe Dilip Ji!]</p>", unsafe_
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Messages dikhane ke liye loop
+# Chat History display
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.write(m["content"])
 
-# User Input Logic
+# Smart Input Logic
 if prompt := st.chat_input("Puchiye, Dilip ji..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.write(prompt)
     
-    # Instruction for AI
     payload = {
-        "contents": [{"parts": [{"text": f"Today is Feb 2026. Give a short Hindi response for Dilip: {prompt}"}]}]
+        "contents": [{"parts": [{"text": f"Today is Feb 2026. Give a short Hindi reply for Dilip: {prompt}"}]}]
     }
     
-    # Smart Recognition: Stock ya Market ki baaton par Live Search on
-    market_words = ['stoc', 'stock', 'market', 'nifty', 'price', 'rate', 'aaj']
-    if any(word in prompt.lower() for word in market_words):
+    # Market keywords for live search
+    if any(word in prompt.lower() for word in ['stoc', 'stock', 'market', 'nifty', 'aaj']):
         payload["tools"] = [{"google_search_retrieval": {}}]
     
     try:
-        # 120s timeout slow internet ke liye
-        response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=120)
+        # Long timeout for slow internet
+        response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=60)
         ans = response.json()['candidates'][0]['content']['parts'][0]['text']
         
         with st.chat_message("assistant"):
             st.write(ans)
         st.session_state.messages.append({"role": "assistant", "content": ans})
     except:
-        st.error("Network bohot weak hai. Ek baar Airplane mode try karein.")
+        st.warning("Network weak hai. Ek baar refresh karein.")
         
