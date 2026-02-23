@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import time
 
 # --- CONFIG ---
 API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
@@ -15,24 +16,33 @@ st.write("Radhe-Radhe Dilip Ji!]")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Chat Logic
+# Chat Logic with Retry
 if prompt := st.chat_input("2026 ka live data poochein..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # 2026 Live Search Tool
     payload = {
         "contents": [{"parts": [{"text": f"Today is Feb 2026. Search live for Dilip: {prompt}"}]}],
         "tools": [{"google_search_retrieval": {}}]
     }
     
-    try:
-        response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload)
-        ans = response.json()['candidates'][0]['content']['parts'][0]['text']
-        st.session_state.messages.append({"role": "assistant", "content": ans})
-    except:
-        st.error("Internet slow hai, dobara try karein.")
+    success = False
+    for i in range(3): # 3 baar koshish karega
+        try:
+            # Timeout badha kar 40 second kiya
+            response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=40)
+            ans = response.json()['candidates'][0]['content']['parts'][0]['text']
+            st.session_state.messages.append({"role": "assistant", "content": ans})
+            success = True
+            break
+        except:
+            time.sleep(2) # 2 second rukk kar fir koshish
+            continue
+            
+    if not success:
+        st.error("Internet abhi bhi slow hai, kripya signal area mein jayein.")
 
-# Messages dikhayein
+# Messages display
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.write(m["content"])
+        
