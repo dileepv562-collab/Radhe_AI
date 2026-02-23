@@ -4,3 +4,4 @@ gTTS
 streamlit-mic-recorder
 googlesearch-python
 requests
+streamlit-mic-recorder
