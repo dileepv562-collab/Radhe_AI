@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # --- CONFIG ---
-API_KEY = "AIzaSyB6j69nODBK56pADVfBP2b1I-gTOBu0ODA"
+API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
 MODEL = "gemini-3-flash-preview"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
@@ -15,29 +15,35 @@ st.markdown("<p style='text-align: center;'>Radhe-Radhe Dilip Ji!]</p>", unsafe_
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Sabse Tez Logic: No Search unless strictly requested
-if prompt := st.chat_input("Hii likhkar check karein..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # Base Instruction: Isse AI fast reply dega
-    payload = {
-        "contents": [{"parts": [{"text": f"Aap Radhe AI hain. Dilip ji se baat kar rahe hain. Hindi mein short reply dein: {prompt}"}]}]
-    }
-    
-    # Google Search tabhi chalega jab aap 'live' ya 'stock' likhenge
-    if any(word in prompt.lower() for word in ['live', 'stock', 'rate', 'aaj', 'price']):
-        payload["tools"] = [{"google_search_retrieval": {}}]
-    
-    try:
-        # Request with 90s timeout for very slow networks
-        response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=90)
-        ans = response.json()['candidates'][0]['content']['parts'][0]['text']
-        st.session_state.messages.append({"role": "assistant", "content": ans})
-    except:
-        st.error("Network bohot weak hai. Ek baar Airplane mode on-off karke try karein.")
-
-# Messages display
+# Messages dikhane ke liye loop
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.write(m["content"])
+
+# User Input Logic
+if prompt := st.chat_input("Puchiye, Dilip ji..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.write(prompt)
+    
+    # Instruction for AI
+    payload = {
+        "contents": [{"parts": [{"text": f"Today is Feb 2026. Give a short Hindi response for Dilip: {prompt}"}]}]
+    }
+    
+    # Smart Recognition: Stock ya Market ki baaton par Live Search on
+    market_words = ['stoc', 'stock', 'market', 'nifty', 'price', 'rate', 'aaj']
+    if any(word in prompt.lower() for word in market_words):
+        payload["tools"] = [{"google_search_retrieval": {}}]
+    
+    try:
+        # 120s timeout slow internet ke liye
+        response = requests.post(URL, headers={'Content-Type': 'application/json'}, json=payload, timeout=120)
+        ans = response.json()['candidates'][0]['content']['parts'][0]['text']
+        
+        with st.chat_message("assistant"):
+            st.write(ans)
+        st.session_state.messages.append({"role": "assistant", "content": ans})
+    except:
+        st.error("Network bohot weak hai. Ek baar Airplane mode try karein.")
         
