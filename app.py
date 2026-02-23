@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # --- CONFIG ---
-API_KEY = "AIzaSyCZfPk0w1mX4cTkzVOKjkGaD70mve2zW_M"
+API_KEY =
 MODEL = "gemini-3-flash-preview"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
