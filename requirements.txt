@@ -5,8 +5,3 @@ streamlit-mic-recorder
 googlesearch-python
 requests
 streamlit-mic-recorder
-Flask==2.3.3
-SpeechRecognition==3.10.0
-pyttsx3==2.90
-gtts==2.5.1
-pygame==2.5.2
