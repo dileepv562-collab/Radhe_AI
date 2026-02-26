@@ -8,7 +8,7 @@ try:
 except:
     genai.configure(api_key="AIzaSyBpXf5sfUvA0xsKmYA2eajvw-8spYN7tm0")
 
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 # Beautiful Mobile UI
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
