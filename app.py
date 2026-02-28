@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # --- Setup ---
-# API Key आपके Streamlit secrets से सुरक्षित ली जा रही है
+# API Key आपके Streamlit secrets से ली जा रही है
 API_KEY = st.secrets["API_KEY"] 
 MODEL = "gemini-2.5-flash-lite" 
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
@@ -10,22 +10,22 @@ URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generate
 # UI setup
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
 
-# Divine Header Section (आपका दिव्य चक्र)
+# Divine Header Section (आपका दिव्य चक्र - अब बिल्कुल सही एलाइनमेंट के साथ)
 divine_circle = """
-<div style="text-align: center; color: #FFD700; font-family: monospace; font-size: 14px;">
-    <pre>
-               .---.
-            .'       '.
-           /   OM NAMO  \\
-          |  BHAGAVATE   |
-           \ VASUDEVAYA /
-            '.       .'
-               '---'
+<div style="text-align: center; color: #FFD700; background-color: #0e1117; padding: 15px; border-radius: 10px;">
+    <pre style="color: #FFD700; font-family: 'Courier New', Courier, monospace; font-size: 14px; display: inline-block; text-align: left;">
+           .---.
+        .'       '.
+       /   OM NAMO  \\
+      |  BHAGAVATE   |
+       \ VASUDEVAYA /
+        '.       .'
+           '---'
     </pre>
-    <h3 style="color: #00CED1;">ॐ नमो भगवते वासुदेवाय</h3>
+    <h3 style="color: #00CED1; margin-top: -5px;">ॐ नमो भगवते वासुदेवाय</h3>
 </div>
 """
-st.markdown(divine_circle, unsafe_allow_html=True)
+st.markdown(divine_circle, unsafe_html=True)
 st.divider()
 
 # Session state for chat history (याददाश्त के लिए)
