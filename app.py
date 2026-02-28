@@ -1,11 +1,10 @@
 import streamlit as st
 import requests
-import os
 
 # --- Setup ---
 # API Key ab Streamlit ke secrets se aayegi
 API_KEY = st.secrets["API_KEY"] 
-MODEL = ('gemini-2.5-flash-lite') 
+MODEL = "gemini-2.5-flash-lite" 
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 # UI setup
@@ -23,12 +22,19 @@ for message in st.session_state.messages:
 
 # Chat input
 if user_input := st.chat_input("श्री हरि को कुछ पूछें..."):
+    # User message display
     st.chat_message("user").markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # API Request
+    # Prepare chat history for API (Context Memory)
+    history = []
+    for msg in st.session_state.messages:
+        role = "user" if msg["role"] == "user" else "model"
+        history.append({"role": role, "parts": [{"text": msg["content"]}]})
+
+    # API Request with History and Tools
     payload = {
-        "contents": [{"parts": [{"text": f"Your name is Radhe AI. You have access to Google Search. ALWAYS use Google Search for current data. Hindi: {user_input}"}]}],
+        "contents": history,
         "tools": [{"google_search": {}}]
     }
     
