@@ -5,7 +5,7 @@ import os
 # --- Setup ---
 # API Key ab Streamlit ke secrets se aayegi
 API_KEY = st.secrets["API_KEY"] 
-MODEL = "gemini-3-flash-preview" 
+MODEL = ('gemini-2.5-flash-lite') 
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 # UI setup
