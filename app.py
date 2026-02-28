@@ -2,36 +2,21 @@ import streamlit as st
 import requests
 
 # --- Setup ---
-# API Key आपके Streamlit secrets से ली जा रही है
+# API Key आपके Streamlit secrets से सुरक्षित ली जा रही है
+# ध्यान रहे, Streamlit Cloud के 'Secrets' में API_KEY सेट होनी चाहिए
 API_KEY = st.secrets["API_KEY"] 
 MODEL = "gemini-2.5-flash-lite" 
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 # UI setup
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
+st.title("🕉️ Radhe AI: आपका डिजिटल साथी")
 
-# Divine Header Section (आपका दिव्य चक्र - अब बिल्कुल सही एलाइनमेंट के साथ)
-divine_circle = """
-<div style="text-align: center; color: #FFD700; background-color: #0e1117; padding: 15px; border-radius: 10px;">
-    <pre style="color: #FFD700; font-family: 'Courier New', Courier, monospace; font-size: 14px; display: inline-block; text-align: left;">
-           .---.
-        .'       '.
-       /   OM NAMO  \\
-      |  BHAGAVATE   |
-       \ VASUDEVAYA /
-        '.       .'
-           '---'
-    </pre>
-    <h3 style="color: #00CED1; margin-top: -5px;">ॐ नमो भगवते वासुदेवाय</h3>
-</div>
-st.markdown(divine_circle, unsafe_html=True)
-st.divider()
-
-# Session state for chat history (याददाश्त के लिए)
+# Session state for chat history (यही आपकी बातचीत को याद रखता है)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat history
+# Display chat history (पुराने संदेशों को स्क्रीन पर दिखाता है)
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
@@ -43,6 +28,7 @@ if user_input := st.chat_input("श्री हरि को कुछ पू�
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     # Prepare chat history for API (Context Memory)
+    # यह हिस्सा सुनिश्चित करता है कि AI पिछली बातें याद रखे
     history = []
     for msg in st.session_state.messages:
         role = "user" if msg["role"] == "user" else "model"
