@@ -24,7 +24,6 @@ divine_circle = """
     </pre>
     <h3 style="color: #00CED1; margin-top: -5px;">ॐ नमो भगवते वासुदेवाय</h3>
 </div>
-"""
 st.markdown(divine_circle, unsafe_html=True)
 st.divider()
 
