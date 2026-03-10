@@ -55,7 +55,7 @@ st.title("🕉️ Radhe AI: आपका डिजिटल साथी")
 # API Key आपके Streamlit secrets से सुरक्षित ली जा रही है
 # ध्यान रहे, Streamlit Cloud के 'Secrets' में API_KEY सेट होनी चाहिए
 API_KEY = st.secrets["API_KEY"] 
-MODEL = "gemini-2.0-flash-lite" 
+MODEL = "gemini-2.5-flash-lite" 
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 # Session state for chat history (यही आपकी बातचीत को याद रखता है)
