@@ -51,7 +51,7 @@ def send_email(receiver_email, subject, message):
 
 # --- AI Logic ---
 API_KEY = st.secrets["API_KEY"]
-MODEL = "gemini-1.5-flash" # Function calling के लिए flash मॉडल बेस्ट है
+MODEL = "('gemini-2.5-flash-lite')" # Function calling के लिए flash मॉडल बेस्ट है
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 if "messages" not in st.session_state:
