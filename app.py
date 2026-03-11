@@ -1,105 +1,126 @@
 import streamlit as st
 import requests
+import smtplib
+import webbrowser
+from email.mime.text import MIMEText
 
 # --- Setup ---
-# UI setup (हमेशा सबसे ऊपर होना चाहिए)
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
 
-# --- नया फीचर: इमेज के जैसा सर्कल और मंत्र ---
-# यह CSS सर्कल, उसका बॉर्डर, टेक्स्ट का रंग और एलाइनमेंट सेट करता है
+# --- UI Circle Feature ---
 st.markdown("""
 <style>
-    .radhe-circle-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-        margin-bottom: 20px;
-        position: relative;
-    }
-
-    .radhe-circle-border {
-        width: 300px;
-        height: 300px;
-        border-radius: 50%;
-        border: 4px solid #cc5500; /* गहरा ऑरेंज बॉर्डर */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: transparent; /* बैकग्राउंड पारदर्शी रहेगा */
-    }
-
-    .radhe-circle-text {
-        text-align: center;
-        color: #DAA520; /* सुनहरे रंग का टेक्स्ट */
-        font-weight: bold;
-        font-size: 1.5em;
-        line-height: 1.2;
-    }
+    .radhe-circle-container { display: flex; justify-content: center; align-items: center; margin: 20px 0; }
+    .radhe-circle-border { width: 250px; height: 250px; border-radius: 50%; border: 4px solid #cc5500; display: flex; justify-content: center; align-items: center; }
+    .radhe-circle-text { text-align: center; color: #DAA520; font-weight: bold; font-size: 1.2em; }
 </style>
-
 <div class="radhe-circle-container">
     <div class="radhe-circle-border">
-        <div class="radhe-circle-text">
-            OM NAMO<br>
-            BAGVATE<br>
-            VASUDEVAY
-        </div>
+        <div class="radhe-circle-text">OM NAMO<br>BAGVATE<br>VASUDEVAY</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# --- पुराना कोड (बाकी ऐप) ---
-st.title("🕉️ Radhe AI: आपका डिजिटल साथी")
+st.title("🕉️ Radhe AI: आपका डिजिटल सहायक")
 
-# API Key आपके Streamlit secrets से सुरक्षित ली जा रही है
-# ध्यान रहे, Streamlit Cloud के 'Secrets' में API_KEY सेट होनी चाहिए
-API_KEY = st.secrets["API_KEY"] 
-MODEL = "gemini-2.5-flash-lite" 
+# --- Functions (The 'Work' part) ---
+
+def search_youtube(query):
+    """यूट्यूब पर वीडियो खोजने के लिए"""
+    url = f"https://www.youtube.com/results?search_query={query}"
+    # नोट: Streamlit क्लाउड पर ब्राउज़र सीधा नहीं खुलता, हम लिंक देंगे
+    return f"मैंने यूट्यूब पर '{query}' के लिए खोज की है। यहाँ देखें: {url}"
+
+def send_email(receiver_email, subject, message):
+    """ईमेल भेजने के लिए"""
+    sender_email = st.secrets["MY_EMAIL"] # आपकी ईमेल आईडी
+    password = st.secrets["EMAIL_PASSWORD"] # आपका App Password
+    
+    msg = MIMEText(message)
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+        return "ईमेल सफलतापूर्वक भेज दिया गया है।"
+    except Exception as e:
+        return f"ईमेल भेजने में त्रुटि: {str(e)}"
+
+# --- AI Logic ---
+API_KEY = st.secrets["API_KEY"]
+MODEL = "gemini-1.5-flash" # Function calling के लिए flash मॉडल बेस्ट है
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
-# Session state for chat history (यही आपकी बातचीत को याद रखता है)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat history (पुराने संदेशों को स्क्रीन पर दिखाता है)
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat input
 if user_input := st.chat_input("श्री हरि को कुछ पूछें..."):
-    # User message display
     st.chat_message("user").markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # Prepare chat history for API (Context Memory)
-    # यह हिस्सा सुनिश्चित करता है कि AI पिछली बातें याद रखे
+    # Prepare Context
     history = []
     for msg in st.session_state.messages:
         role = "user" if msg["role"] == "user" else "model"
         history.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-    # API Request with History and Tools
+    # Tools Definition
     payload = {
         "contents": history,
-        "tools": [{"google_search": {}}]
+        "tools": [{
+            "function_declarations": [
+                {
+                    "name": "search_youtube",
+                    "description": "यूट्यूब पर वीडियो या भजन खोजने के लिए",
+                    "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}
+                },
+                {
+                    "name": "send_email",
+                    "description": "ईमेल भेजने के लिए",
+                    "parameters": {
+                        "type": "object", 
+                        "properties": {
+                            "receiver_email": {"type": "string"},
+                            "subject": {"type": "string"},
+                            "message": {"type": "string"}
+                        }
+                    }
+                }
+            ]
+        }]
     }
 
-    headers = {'Content-Type': 'application/json'}
-
     try:
-        response = requests.post(URL, headers=headers, json=payload, timeout=30)
-        result = response.json()
-
-        if 'candidates' in result:
-            ai_text = result['candidates'][0]['content']['parts'][0]['text']
+        response = requests.post(URL, json=payload).json()
+        
+        # यहाँ AI तय करेगा कि उसे 'बात' करनी है या 'काम' (Function call)
+        if 'candidates' in response:
+            part = response['candidates'][0]['content']['parts'][0]
+            
+            if 'functionCall' in part:
+                # अगर AI काम करना चाहता है
+                fn_name = part['functionCall']['name']
+                args = part['functionCall']['args']
+                
+                if fn_name == "search_youtube":
+                    res = search_youtube(args['query'])
+                elif fn_name == "send_email":
+                    res = send_email(args['receiver_email'], args['subject'], args['message'])
+                
+                ai_output = res
+            else:
+                ai_output = part['text']
+            
             with st.chat_message("assistant"):
-                st.markdown(ai_text)
-            # Assistant response history mein save ho raha hai
-            st.session_state.messages.append({"role": "assistant", "content": ai_text})
-        else:
-            st.error("Radhe AI अभी ध्यान लगा रहे हैं, कृपया पुनः प्रयास करें।")
+                st.markdown(ai_output)
+            st.session_state.messages.append({"role": "assistant", "content": ai_output})
 
     except Exception as e:
-        st.error(f"सिस्टम त्रुटि: {e}")
+        st.error(f"त्रुटि: {e}")
