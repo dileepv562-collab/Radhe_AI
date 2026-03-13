@@ -4,92 +4,73 @@ import requests
 # --- 1. Page & UI Setup ---
 st.set_page_config(page_title="Radhe AI", page_icon="🕉️")
 
-# CSS for the Circle UI
 st.markdown("""
 <style>
-    .radhe-circle-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-        margin-bottom: 20px;
-    }
-    .radhe-circle-border {
-        width: 250px;
-        height: 250px;
-        border-radius: 50%;
-        border: 4px solid #cc5500;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: transparent;
-    }
-    .radhe-circle-text {
-        text-align: center;
-        color: #DAA520;
-        font-weight: bold;
-        font-size: 1.3em;
-        line-height: 1.2;
-    }
+    .radhe-circle-container { display: flex; justify-content: center; align-items: center; margin: 20px 0; }
+    .radhe-circle-border { width: 220px; height: 220px; border-radius: 50%; border: 4px solid #cc5500; display: flex; justify-content: center; align-items: center; }
+    .radhe-circle-text { text-align: center; color: #DAA520; font-weight: bold; font-size: 1.2em; }
 </style>
-
 <div class="radhe-circle-container">
-    <div class="radhe-circle-border">
-        <div class="radhe-circle-text">
-            OM NAMO<br>
-            BAGVATE<br>
-            VASUDEVAY
-        </div>
-    </div>
+    <div class="radhe-circle-border"><div class="radhe-circle-text">OM NAMO<br>BAGVATE<br>VASUDEVAY</div></div>
 </div>
 """, unsafe_allow_html=True)
 
-st.title("🕉️ Radhe AI: आपका डिजिटल सहायक")
+st.title("🕉️ Radhe AI: आपका सहायक")
 
-# --- 2. Functions (Tools) ---
+# --- 2. Functions (The Tools) ---
 
 def search_youtube(query):
-    """यूट्यूब पर वीडियो खोजने के लिए टूल"""
     url = f"https://www.youtube.com/results?search_query={query}"
-    return f"मैंने यूट्यूब पर '{query}' के लिए खोज की है। आप यहाँ देख सकते हैं: {url}"
+    return f"मैंने यूट्यूब पर '{query}' खोजा है। यहाँ देखें: {url}"
+
+def track_expense(item, amount):
+    if "expenses" not in st.session_state:
+        st.session_state.expenses = []
+    
+    st.session_state.expenses.append({"item": item, "amount": amount})
+    total = sum(ex['amount'] for ex in st.session_state.expenses)
+    return f"ठीक है, मैंने '{item}' के लिए ₹{amount} नोट कर लिए हैं। अब तक का कुल खर्च ₹{total} है।"
 
 # --- 3. AI Config ---
-# अब आपको Secrets में सिर्फ API_KEY की ज़रूरत है
 API_KEY = st.secrets["API_KEY"]
-MODEL = ('gemini-2.5-flash-lite') 
+MODEL = "gemini-2.0-flash-exp" # आपका पसंदीदा नया मॉडल
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# पुराने संदेशों को दिखाना
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # --- 4. Main Chat Logic ---
 if user_input := st.chat_input("श्री हरि को कुछ पूछें..."):
-    # यूजर का मैसेज दिखाना
     st.chat_message("user").markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # हिस्ट्री तैयार करना
     history = []
     for msg in st.session_state.messages:
         role = "user" if msg["role"] == "user" else "model"
         history.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-    # API Payload (सिर्फ YouTube Tool के साथ)
     payload = {
         "contents": history,
         "tools": [{
             "function_declarations": [
                 {
                     "name": "search_youtube",
-                    "description": "यूट्यूब पर वीडियो, भजन या कथा खोजने के लिए",
+                    "description": "YouTube search for videos",
+                    "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}
+                },
+                {
+                    "name": "track_expense",
+                    "description": "Track money spent on items",
                     "parameters": {
-                        "type": "object",
-                        "properties": {"query": {"type": "string"}}
+                        "type": "object", 
+                        "properties": {
+                            "item": {"type": "string", "description": "चीज़ का नाम"},
+                            "amount": {"type": "number", "description": "रुपये"}
+                        }
                     }
                 }
             ]
@@ -103,23 +84,26 @@ if user_input := st.chat_input("श्री हरि को कुछ पू�
         if 'candidates' in result:
             part = result['candidates'][0]['content']['parts'][0]
             
-            # चेक करें कि AI काम करना चाहता है या सिर्फ बात
             if 'functionCall' in part:
-                fn_name = part['functionCall']['name']
-                args = part['functionCall']['args']
-                
-                if fn_name == "search_youtube":
-                    with st.spinner("यूट्यूब पर खोज रहा हूँ..."):
-                        ai_response = search_youtube(args.get('query', ''))
+                fn = part['functionCall']
+                if fn['name'] == "search_youtube":
+                    ai_response = search_youtube(fn['args']['query'])
+                elif fn['name'] == "track_expense":
+                    ai_response = track_expense(fn['args']['item'], fn['args']['amount'])
             else:
                 ai_response = part.get('text', "क्षमा करें, मैं समझ नहीं पाया।")
-
-            # जवाब दिखाना
+            
             with st.chat_message("assistant"):
                 st.markdown(ai_response)
             st.session_state.messages.append({"role": "assistant", "content": ai_response})
-        else:
-            st.error("AI से संपर्क नहीं हो पाया। कृपया अपनी API Key चेक करें।")
-
     except Exception as e:
-        st.error(f"सिस्टम एरर: {e}")
+        st.error(f"Error: {e}")
+
+# साइडबार में खर्चों की लिस्ट दिखाना
+if "expenses" in st.session_state and st.session_state.expenses:
+    with st.sidebar:
+        st.header("📉 आपका हिसाब-किताब")
+        for ex in st.session_state.expenses:
+            st.write(f"- {ex['item']}: ₹{ex['amount']}")
+        st.divider()
+        st.write(f"**कुल खर्च: ₹{sum(ex['amount'] for ex in st.session_state.expenses)}**")
