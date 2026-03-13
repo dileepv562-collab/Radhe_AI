@@ -38,10 +38,23 @@ def speak_text(text):
     except:
         pass
 
-# --- 3. UI Setup ---
+# --- 3. UI Setup (Gemini Style) ---
 st.set_page_config(page_title="Radhe AI Assistant", layout="wide")
 
-st.markdown("""<style>.radhe-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #cc5500; display: flex; justify-content: center; align-items: center; margin: auto; color: #DAA520; font-weight: bold; text-align: center; font-size: 12px; }</style><div class="radhe-circle">OM NAMO<br>BAGVATE<br>VASUDEVAY</div>""", unsafe_allow_html=True)
+st.markdown("""
+<style>
+    .radhe-circle { width: 100px; height: 100px; border-radius: 50%; border: 2px solid #cc5500; 
+                   display: flex; justify-content: center; align-items: center; margin: auto; 
+                   color: #DAA520; font-weight: bold; text-align: center; font-size: 10px; }
+    
+    /* नीचे फ्लोटिंग सर्च बार का स्टाइल */
+    .stChatInput {
+        position: fixed;
+        bottom: 20px;
+    }
+</style>
+<div class="radhe-circle">OM NAMO<br>BAGVATE<br>VASUDEVAY</div>
+""", unsafe_allow_html=True)
 
 # --- 4. Sidebar ---
 with st.sidebar:
@@ -54,21 +67,23 @@ with st.sidebar:
     notes = conn.execute("SELECT content FROM notes ORDER BY date DESC LIMIT 3").fetchall()
     for n in notes: st.info(n[0])
 
-# --- 5. Voice Input ---
-st.write("### 🎙️ वॉइस कमांड")
+# --- 5. Voice Input (Bottom Position Logic) ---
+# माइक बटन को इनपुट के पास दिखाने के लिए छोटा बटन
 voice_js = """
 <script>
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.lang = 'hi-IN';
-function start() { recognition.start(); }
+function startMic() { recognition.start(); }
 recognition.onresult = (e) => {
     const text = e.results[0][0].transcript;
     window.parent.postMessage({type: 'streamlit:set_widget_value', key: 'voice_val', value: text}, '*');
 };
 </script>
-<button onclick="start()" style="background: #cc5500; color: white; border: none; padding: 12px; border-radius: 25px; width: 100%; cursor: pointer;">🎤 माइक ऑन करें</button>
+<div style="position: fixed; bottom: 85px; right: 40px; z-index: 1000;">
+    <button onclick="startMic()" style="background: #1e1e1e; color: #DAA520; border: 1px solid #444; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 20px;">🎙️</button>
+</div>
 """
-components.html(voice_js, height=70)
+components.html(voice_js, height=0)
 voice_text = st.session_state.get('voice_val', "")
 
 # --- 6. Chat Memory ---
@@ -79,8 +94,8 @@ if "messages" not in st.session_state:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-# --- 7. Main Logic ---
-user_input = st.chat_input("यहाँ लिखें या माइक इस्तेमाल करें...")
+# --- 7. Main Logic with Gemini 2.5 Flash Lite ---
+user_input = st.chat_input("श्री हरि को कुछ पूछें...")
 final_input = voice_text if (voice_text and not user_input) else user_input
 
 if final_input:
@@ -90,9 +105,11 @@ if final_input:
     save_chat("user", final_input)
 
     API_KEY = st.secrets["API_KEY"]
-    URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={API_KEY}"
+    # यहाँ आपका नया मॉडल अपडेट कर दिया गया है
+    MODEL = "gemini-2.5-flash-lite" 
+    URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
-    # --- ERROR FIX: Logic to separate Tools vs Search ---
+    # Tools vs Search separation logic
     task_keywords = ["खर्च", "नोट", "save", "expense", "youtube", "यूट्यूब", "लिखो", "बचाओ"]
     is_task = any(word in final_input.lower() for word in task_keywords)
 
@@ -130,7 +147,7 @@ if final_input:
             else:
                 ai_res = part.get('text', "हरे कृष्ण!")
         else:
-            ai_res = f"Error: {res.get('error', {}).get('message', 'No candidate')}"
+            ai_res = f"Model Error: {res.get('error', {}).get('message', 'Model not available or error in response.')}"
 
         with st.chat_message("assistant"):
             st.markdown(ai_res)
