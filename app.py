@@ -90,7 +90,7 @@ if final_input:
     save_chat("user", final_input)
 
     API_KEY = st.secrets["API_KEY"]
-    URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={API_KEY}"
+    URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={API_KEY}"
 
     # --- ERROR FIX: Logic to separate Tools vs Search ---
     task_keywords = ["खर्च", "नोट", "save", "expense", "youtube", "यूट्यूब", "लिखो", "बचाओ"]
