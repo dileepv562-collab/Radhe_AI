@@ -56,7 +56,7 @@ def search_youtube(query):
 # --- 3. AI Config ---
 # अब आपको Secrets में सिर्फ API_KEY की ज़रूरत है
 API_KEY = st.secrets["API_KEY"]
-MODEL = "gemini-1.5-flash" 
+MODEL = ('gemini-2.5-flash-lite') 
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 if "messages" not in st.session_state:
