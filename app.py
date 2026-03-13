@@ -92,7 +92,7 @@ if final_input:
     save_chat("user", final_input)
 
     API_KEY = st.secrets["API_KEY"]
-    URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={API_KEY}"
+    URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={API_KEY}"
 
     payload = {
         "contents": [{"role": m["role"]=="user" and "user" or "model", "parts": [{"text": m["content"]}]} for m in st.session_state.messages],
