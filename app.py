@@ -74,7 +74,7 @@ with st.sidebar:
 
 # --- 4. AI & Tools Setup ---
 API_KEY = st.secrets["API_KEY"]
-MODEL = "gemini-2.0-flash-exp" 
+MODEL = ('gemini-2.5-flash-lite') 
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
 if "messages" not in st.session_state:
