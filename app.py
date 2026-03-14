@@ -25,20 +25,36 @@ def save_chat(role, content):
               (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, content))
     conn.commit()
 
-# --- 2. Voice Output ---
+# --- 2. Improved Voice Output (Fixed for Browsers) ---
 def speak_text(text):
     try:
-        clean_text = text.replace('*', '').replace('#', '')
-        tts = gTTS(text=clean_text, lang='hi')
-        tts.save("temp.mp3")
-        with open("temp.mp3", "rb") as f:
-            data = f.read()
-            b64 = base64.b64encode(data).decode()
-            st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
-    except:
-        pass
+        if text:
+            # फालतू सिम्बल्स हटाना ताकि आवाज़ साफ़ आए
+            clean_text = text.replace('*', '').replace('#', '').replace('-', ' ')
+            tts = gTTS(text=clean_text, lang='hi')
+            tts.save("temp.mp3")
+            
+            with open("temp.mp3", "rb") as f:
+                data = f.read()
+                b64 = base64.b64encode(data).decode()
+                
+                # ब्राउज़र को फोर्स करने के लिए जावास्क्रिप्ट + ऑडियो टैग
+                audio_html = f"""
+                    <audio id="radhe-audio" autoplay>
+                        <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+                    </audio>
+                    <script>
+                        var audio = document.getElementById('radhe-audio');
+                        audio.play().catch(function(error) {{
+                            console.log("Autoplay prevented. Needs user click.");
+                        }});
+                    </script>
+                """
+                st.markdown(audio_html, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Voice Error: {e}")
 
-# --- 3. UI Setup (Gemini Style) ---
+# --- 3. UI Setup ---
 st.set_page_config(page_title="Radhe AI Assistant", layout="wide")
 
 st.markdown("""
@@ -46,12 +62,7 @@ st.markdown("""
     .radhe-circle { width: 100px; height: 100px; border-radius: 50%; border: 2px solid #cc5500; 
                    display: flex; justify-content: center; align-items: center; margin: auto; 
                    color: #DAA520; font-weight: bold; text-align: center; font-size: 10px; }
-    
-    /* नीचे फ्लोटिंग सर्च बार का स्टाइल */
-    .stChatInput {
-        position: fixed;
-        bottom: 20px;
-    }
+    .stChatInput { position: fixed; bottom: 20px; }
 </style>
 <div class="radhe-circle">OM NAMO<br>BAGVATE<br>VASUDEVAY</div>
 """, unsafe_allow_html=True)
@@ -67,8 +78,7 @@ with st.sidebar:
     notes = conn.execute("SELECT content FROM notes ORDER BY date DESC LIMIT 3").fetchall()
     for n in notes: st.info(n[0])
 
-# --- 5. Voice Input (Bottom Position Logic) ---
-# माइक बटन को इनपुट के पास दिखाने के लिए छोटा बटन
+# --- 5. Voice Input ---
 voice_js = """
 <script>
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -88,13 +98,13 @@ voice_text = st.session_state.get('voice_val', "")
 
 # --- 6. Chat Memory ---
 if "messages" not in st.session_state:
-    hist = conn.execute("SELECT role, content FROM chat_history ORDER BY timestamp ASC").fetchall()
+    hist = conn.execute("SELECT role, content FROM chat_history ORDER BY timestamp ASC LIMIT 20").fetchall()
     st.session_state.messages = [{"role": r, "content": c} for r, c in hist]
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-# --- 7. Main Logic with Gemini 2.5 Flash Lite ---
+# --- 7. Main Logic ---
 user_input = st.chat_input("श्री हरि को कुछ पूछें...")
 final_input = voice_text if (voice_text and not user_input) else user_input
 
@@ -104,56 +114,56 @@ if final_input:
     st.session_state.messages.append({"role": "user", "content": final_input})
     save_chat("user", final_input)
 
-    API_KEY = st.secrets["API_KEY"]
-    # यहाँ आपका नया मॉडल अपडेट कर दिया गया है
-    MODEL = "gemini-2.5-flash-lite" 
-    URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
-
-    # Tools vs Search separation logic
-    task_keywords = ["खर्च", "नोट", "save", "expense", "youtube", "यूट्यूब", "लिखो", "बचाओ"]
-    is_task = any(word in final_input.lower() for word in task_keywords)
-
-    if is_task:
-        tools = [{"function_declarations": [
-            {"name": "track_expense", "description": "Save expense", "parameters": {"type": "object", "properties": {"item": {"type": "string"}, "amount": {"type": "number"}}}},
-            {"name": "save_note", "description": "Save note", "parameters": {"type": "object", "properties": {"note": {"type": "string"}}}},
-            {"name": "youtube_search", "description": "YouTube", "parameters": {"type": "object", "properties": {"q": {"type": "string"}}}}
-        ]}]
-    else:
-        tools = [{"google_search": {}}]
-
-    payload = {
-        "contents": [{"role": m["role"]=="user" and "user" or "model", "parts": [{"text": m["content"]}]} for m in st.session_state.messages],
-        "tools": tools
-    }
-
     try:
+        API_KEY = st.secrets["API_KEY"]
+        MODEL = "gemini-2.5-flash-lite" # Stable model
+        URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
+
+        task_keywords = ["खर्च", "नोट", "save", "expense", "youtube", "लिखो", "बचाओ"]
+        is_task = any(word in final_input.lower() for word in task_keywords)
+
+        if is_task:
+            tools = [{"function_declarations": [
+                {"name": "track_expense", "description": "Save expense", "parameters": {"type": "object", "properties": {"item": {"type": "string"}, "amount": {"type": "number"}}}},
+                {"name": "save_note", "description": "Save note", "parameters": {"type": "object", "properties": {"note": {"type": "string"}}}},
+                {"name": "youtube_search", "description": "YouTube", "parameters": {"type": "object", "properties": {"q": {"type": "string"}}}}
+            ]}]
+        else:
+            tools = [{"google_search": {}}]
+
+        payload = {
+            "contents": [{"role": m["role"]=="user" and "user" or "model", "parts": [{"text": m["content"]}]} for m in st.session_state.messages],
+            "tools": tools
+        }
+
         res = requests.post(URL, json=payload, timeout=30).json()
-        if 'candidates' in res and len(res['candidates']) > 0:
+        
+        if 'candidates' in res:
             part = res['candidates'][0]['content']['parts'][0]
-            
             if 'functionCall' in part:
                 call = part['functionCall']
                 if call['name'] == "track_expense":
                     conn.execute("INSERT INTO expenses VALUES (?, ?, ?)", (call['args']['item'], call['args']['amount'], datetime.now().strftime("%Y-%m-%d")))
                     conn.commit()
-                    ai_res = f"₹{call['args']['amount']} नोट कर लिए गए हैं।"
+                    ai_res = f"मैंने ₹{call['args']['amount']} का खर्च नोट कर लिया है।"
                 elif call['name'] == "save_note":
                     conn.execute("INSERT INTO notes VALUES (?, ?)", (call['args']['note'], datetime.now().strftime("%Y-%m-%d")))
                     conn.commit()
-                    ai_res = "नोट सुरक्षित कर लिया गया है।"
+                    ai_res = "आपका नोट सुरक्षित कर लिया गया है।"
                 else:
-                    ai_res = f"लिंक: https://www.youtube.com/results?search_query={call['args'].get('q', 'search')}"
+                    ai_res = "यूट्यूब सर्च हो गया है।"
             else:
                 ai_res = part.get('text', "हरे कृष्ण!")
         else:
-            ai_res = f"Model Error: {res.get('error', {}).get('message', 'Model not available or error in response.')}"
+            ai_res = "क्षमा करें, मैं अभी सुन नहीं पाया।"
 
         with st.chat_message("assistant"):
             st.markdown(ai_res)
-            speak_text(ai_res)
+            speak_text(ai_res) # यहाँ आवाज़ आएगी
+        
         st.session_state.messages.append({"role": "assistant", "content": ai_res})
         save_chat("assistant", ai_res)
         st.rerun()
+        
     except Exception as e:
         st.error(f"Error: {e}")
